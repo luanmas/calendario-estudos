@@ -1,0 +1,54 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum SubjectCategory {
+  BASICA
+  ESPECIFICA
+}
+
+enum BlockType {
+  NOVO_CONTEUDO
+  REVISAO_1D
+  REVISAO_7D
+  REVISAO_30D
+}
+
+enum BlockStatus {
+  PENDENTE
+  CONCLUIDO
+  NAO_REALIZADO
+}
+
+model Subject {
+  id       String       @id @default(uuid())
+  name     String
+  category SubjectCategory
+  color    String       @default("#64748b")
+  blocks   StudyBlock[]
+  createdAt DateTime    @default(now())
+}
+
+model StudyBlock {
+  id            String       @id @default(uuid())
+  subjectId     String
+  subject       Subject      @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  topic         String
+  scheduledDate DateTime
+  type          BlockType    @default(NOVO_CONTEUDO)
+  status        BlockStatus  @default(PENDENTE)
+  completed     Boolean      @default(false)
+  completedAt   DateTime?
+  parentBlockId String?
+  parentBlock   StudyBlock?  @relation("ReviewChain", fields: [parentBlockId], references: [id], onDelete: SetNull)
+  reviewBlocks  StudyBlock[] @relation("ReviewChain")
+  createdAt     DateTime     @default(now())
+
+  @@index([scheduledDate, status])
+  @@index([parentBlockId])
+}
